@@ -20,17 +20,25 @@
   "./src/index.js": function (module, exports, __webpack_require__) {
     eval(`let str = __webpack_require__("./src/a.js");
 
-console.log(str); `)
+__webpack_require__("./src/style.less");
+
+console.log(str);`)
   },
    
   "./src/a.js": function (module, exports, __webpack_require__) {
     eval(`let b = __webpack_require__("./src/base/b.js");
 
-module.exports = 'a' + b; `)
+module.exports = 'a' + b;`)
   },
    
   "./src/base/b.js": function (module, exports, __webpack_require__) {
-    eval(`module.exports = 'b'; `)
+    eval(`module.exports = 'b';`)
+  },
+   
+  "./src/style.less": function (module, exports, __webpack_require__) {
+    eval(`var style = document.createElement('style');
+style.innerHTML = "html {\\n  background-color: red;\\n}\\n";
+document.head.appendChild(style);`)
   },
    
 })

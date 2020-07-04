@@ -25,6 +25,24 @@ class Compiler {
   /** 获取源文件的源代码 */
   getSource(modulePath) {
     let content = fs.readFileSync(modulePath, 'utf8')
+
+    // 使用loader处理
+    const loaderRules = this.config.module.rules
+    let len = loaderRules.length
+    while (len > 0) {
+      const rule = loaderRules[--len]
+      const { test, use } = rule
+      let useLen = use.length
+      if (test.test(modulePath)) {
+        // 被loader匹配到
+        while (useLen > 0) {
+          const loaderPath = use[--useLen] // 测试工程直接写的loader的绝对路径，所以这里直接用绝对路径找loader
+          const loader = require(loaderPath)
+          content = loader(content)
+        }
+      }
+    }
+
     return content
   }
   /**
@@ -78,7 +96,7 @@ class Compiler {
     let source = this.getSource(modulePath)
     // 模块id是文件的相对路径  moduleName = modulePath(绝对路径) - this.root
     // 获取相对路径  在windows下路径是反斜杠 src\a.js 要兼容一下
-    let moduleName = './' + path.relative(this.root, modulePath)
+    let moduleName = './' + path.relative(this.root, modulePath) // relative：取相对路径
 
     if (isEntry) {
       this.entryId = moduleName // 保存入口的名字
@@ -105,16 +123,16 @@ class Compiler {
     // 拿到输出到哪个目录下
     let main = path.join(this.config.output.path, this.config.output.filename)
     let templateStr = this.getSource(path.resolve(__dirname, 'main.ejs'))
-    let code = ejs.render(templateStr, {entryId: this.entryId, modules: this.modules})
+    let code = ejs.render(templateStr, { entryId: this.entryId, modules: this.modules })
     this.assets = {}
     // 资源中路径对应的代码
     this.assets[main] = code
-    fs.writeFileSync(main, code)  // TODO
+    fs.writeFileSync(main, code) // TODO
   }
   run() {
     // 执行  并且创建模块的依赖关系
     this.buildModules(path.resolve(this.root, this.entry), true)
-    console.log(this.modules, this.entryId)
+    // console.log(this.modules, this.entryId)
     // 发射一个文件  打包后的文件
     this.emitFile()
   }
